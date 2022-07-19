@@ -1,0 +1,98 @@
+version: '3.7'
+services:
+  metabase_origin:
+    image: metabase/metabase-enterprise:v1.43.4
+    hostname: metabase_origin
+    container_name: metabase_origin
+    volumes:
+      - $PWD/metabase_dump:/target
+    ports:
+      - 3001:3000
+    environment:
+      - "MB_DB_DBNAME=metabase"
+      - "MB_DB_USER=metabase"
+      - "MB_DB_PASS=mysecretpassword"
+      - "MB_DB_PORT=5432"
+      - "MB_DB_HOST=postgres_origin"
+      - "MB_DB_TYPE=postgres"
+    networks:
+      - metanet1
+    depends_on:
+      - postgres_origin
+  setup_origin:
+    image: bash:5.1.16
+    container_name: setup_origin
+    volumes:
+      - $PWD/setup:/tmp
+    networks:
+      - metanet1
+    depends_on:
+      - metabase
+    command: sh /tmp/metabase-setup.sh metabase_origin:3000
+    cpus: 1
+    mem_limit: 128m
+  postgres_origin:
+    image: postgres:14.2-alpine
+    container_name: postgres_origin
+    hostname: postgres_origin
+    environment:
+      - "POSTGRES_USER=metabase"
+      - "POSTGRES_DB=metabase"
+      - "POSTGRES_PASSWORD=mysecretpassword"
+    # volumes:
+    #   - $PWD/postgres_origin:/var/lib/postgresql/data
+    ports:
+      - 5433:5432
+    networks:
+      - metanet1
+  metabase_destination:
+    image: metabase/metabase-enterprise:v1.43.4
+    container_name: metabase_destination
+    hostname: metabase_destination
+    volumes: 
+      - $PWD/metabase_dump:/target
+    ports:
+      - 3002:3000
+    environment: 
+      - "MB_DB_DBNAME=metabase"
+      - "MB_DB_USER=metabase"
+      - "MB_DB_PASS=mysecretpassword"
+      - "MB_DB_PORT=5432"
+      - "MB_DB_TYPE=postgres"
+      - "MB_DB_HOST=postgres_destination"
+      - "MB_ENCRYPTION_SECRET_KEY=4jYVLC7npJDBGJdSeOpQ3JRw+MAdPdBU+6TH8DYM53Y="
+    networks: 
+      - metanet2
+    depends_on: 
+      - postgres_destination
+  setup_destination:
+    image: bash:5.1.16
+    container_name: setup_destination
+    volumes:
+      - $PWD/setup:/tmp
+    networks:
+      - metanet2
+    depends_on:
+      - metabase
+    command: sh /tmp/metabase-setup.sh metabase_destination:3000
+    cpus: 1
+    mem_limit: 128m
+  postgres_destination:
+    image: postgres:14.2-alpine
+    container_name: postgres_destination
+    hostname: postgres_destination
+    environment:
+      - "POSTGRES_USER=metabase"
+      - "POSTGRES_DB=metabase"
+      - "POSTGRES_PASSWORD=mysecretpassword"
+    # volumes:
+    #   - $PWD/postgres_destination:/var/lib/postgresql/data
+    ports:
+      - 5434:5432
+    networks: 
+      - metanet2
+networks: 
+  metanet1:
+    driver: bridge
+  metanet2:
+    driver: bridge
