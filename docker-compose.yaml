@@ -27,7 +27,7 @@ services:
     networks:
       - metanet1
     depends_on:
-      - metabase
+      - metabase_origin
     command: sh /tmp/metabase-setup.sh metabase_origin:3000
     cpus: 1
     mem_limit: 128m
@@ -73,7 +73,7 @@ services:
     networks:
       - metanet2
     depends_on:
-      - metabase
+      - metabase_destination
     command: sh /tmp/metabase-setup.sh metabase_destination:3000
     cpus: 1
     mem_limit: 128m
